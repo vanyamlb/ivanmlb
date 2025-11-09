@@ -18,6 +18,11 @@ Thumbs.db
 node_modules/
 package-lock.json
 yarn.lock
+.pnpm-store/
+
+# Puppeteer cache
+.cache/
+.local-chromium/
 
 # Recordings (if saved locally)
 recordings/

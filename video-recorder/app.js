@@ -16,19 +16,35 @@ class ApsnyCameraRecorder {
         this.tokenRefreshCount = 0;
         this.connectionStatus = 'disconnected';
 
-        // API configuration for apsny.camera
-        this.apiBaseUrl = 'https://clients.apsny.camera';
-        this.corsProxy = ''; // Can be set to a CORS proxy if needed
+        // API configuration - using local backend server
+        this.backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? `http://localhost:${window.location.port || 3000}`
+            : window.location.origin;
 
         this.initializeUI();
         this.setupEventListeners();
         this.log('Приложение запущено', 'info');
+        this.checkBackendHealth();
     }
 
     initializeUI() {
         // Initialize UI elements
         this.updateConnectionStatus('disconnected');
         this.updateTokenInfo();
+    }
+
+    async checkBackendHealth() {
+        try {
+            const response = await fetch(`${this.backendUrl}/api/health`);
+            if (response.ok) {
+                this.log('Backend сервер подключен', 'success');
+            } else {
+                throw new Error('Backend не отвечает');
+            }
+        } catch (error) {
+            this.log('⚠️ Backend сервер не запущен. Запустите: npm start', 'warning');
+            this.showStatusOverlay('Backend сервер не запущен. Запустите: npm start');
+        }
     }
 
     setupEventListeners() {
@@ -126,59 +142,40 @@ class ApsnyCameraRecorder {
         }
     }
 
-    async fetchStreamInfo(cameraId) {
-        // Method 1: Try to fetch from API directly
+    async fetchStreamInfo(cameraIdOrUrl) {
+        // Use backend server to fetch stream info automatically
+        this.log('Запрос к backend серверу...', 'info');
+
         try {
-            const apiUrl = `${this.corsProxy}${this.apiBaseUrl}/api/streams/${cameraId}`;
-            const response = await fetch(apiUrl);
+            const response = await fetch(`${this.backendUrl}/api/get-stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    url: cameraIdOrUrl
+                })
+            });
 
-            if (response.ok) {
-                const data = await response.json();
-                return {
-                    url: data.url || data.streamUrl || data.hls,
-                    token: data.token || data.auth,
-                    expiryTime: data.expiryTime || data.expires_at
-                };
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Не удалось получить поток');
             }
-        } catch (e) {
-            this.log('Прямой API запрос не удался, пробую альтернативный метод', 'warning');
+
+            const data = await response.json();
+
+            this.log(`Stream получен методом: ${data.method}`, 'success');
+
+            return {
+                url: data.url,
+                token: data.token,
+                expiryTime: data.expiryTime || Date.now() + (30 * 60 * 1000)
+            };
+
+        } catch (error) {
+            this.log(`Ошибка backend: ${error.message}`, 'error');
+            throw error;
         }
-
-        // Method 2: Construct URL based on known patterns
-        // This is a fallback method - you may need to adjust based on actual API
-        try {
-            const possibleUrls = [
-                `https://stream.apsny.camera/hls/${cameraId}/index.m3u8`,
-                `https://clients.apsny.camera/streams/${cameraId}/playlist.m3u8`,
-                `https://cdn.apsny.camera/live/${cameraId}/index.m3u8`
-            ];
-
-            for (const url of possibleUrls) {
-                try {
-                    const response = await fetch(url, { method: 'HEAD' });
-                    if (response.ok) {
-                        // Extract token from URL if present
-                        const urlObj = new URL(url);
-                        const token = urlObj.searchParams.get('token') ||
-                                    urlObj.searchParams.get('auth') ||
-                                    this.extractTokenFromUrl(url);
-
-                        return {
-                            url: url,
-                            token: token,
-                            expiryTime: Date.now() + (30 * 60 * 1000)
-                        };
-                    }
-                } catch (e) {
-                    continue;
-                }
-            }
-        } catch (e) {
-            this.log('Автоматическое определение URL не удалось', 'warning');
-        }
-
-        // Method 3: Use browser extension or manual input
-        throw new Error('Не удалось автоматически получить поток. Используйте DevTools для получения URL вручную.');
     }
 
     extractTokenFromUrl(url) {

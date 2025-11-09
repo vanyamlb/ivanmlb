@@ -20,12 +20,15 @@
                     <h2>Настройки камеры</h2>
 
                     <div class="input-group">
-                        <label for="cameraId">ID Камеры:</label>
+                        <label for="cameraId">Ссылка или ID Камеры:</label>
                         <input
                             type="text"
                             id="cameraId"
-                            placeholder="например: sukhum_chegem"
-                            value="sukhum_chegem">
+                            placeholder="https://apsny.camera/?sukhum_chegem или просто sukhum_chegem"
+                            value="">
+                        <small style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">
+                            Вставьте полную ссылку с apsny.camera или только ID камеры
+                        </small>
                     </div>
 
                     <div class="input-group">
@@ -147,7 +150,8 @@
         <div class="info-section">
             <h3>Как это работает:</h3>
             <ol>
-                <li><strong>Автоматическое получение токена:</strong> Приложение подключается к API apsny.camera и получает stream URL с токеном</li>
+                <li><strong>Вставьте ссылку:</strong> Просто вставьте полную ссылку с apsny.camera (например: https://apsny.camera/?sukhum_chegem)</li>
+                <li><strong>Автоматическое извлечение:</strong> Backend автоматически получит stream URL и токен - ничего делать вручную не нужно!</li>
                 <li><strong>Мониторинг токена:</strong> Отслеживает время жизни токена и автоматически обновляет его перед истечением</li>
                 <li><strong>Непрерывная запись:</strong> Запись продолжается даже при обновлении токена - новые сегменты автоматически добавляются</li>
                 <li><strong>Скачивание:</strong> После остановки записи можно скачать видео в формате WebM</li>
@@ -155,12 +159,21 @@
 
             <h3>Особенности:</h3>
             <ul>
+                <li>✅ Полностью автоматическое извлечение stream URL и токена</li>
+                <li>✅ Не нужно открывать DevTools и искать ссылки вручную</li>
                 <li>✅ Автоматическое обновление токена без прерывания записи</li>
                 <li>✅ Поддержка HLS потоков (.m3u8)</li>
                 <li>✅ Мониторинг статуса соединения в реальном времени</li>
                 <li>✅ Логирование всех событий</li>
                 <li>✅ Множественные записи с одной камеры</li>
                 <li>✅ Настройка качества записи</li>
+            </ul>
+
+            <h3>Требования:</h3>
+            <ul>
+                <li>Node.js 16+ установлен на компьютере</li>
+                <li>Запущен backend сервер: <code>npm install && npm start</code></li>
+                <li>Современный браузер (Chrome, Firefox, Edge)</li>
             </ul>
         </div>
     </div>
