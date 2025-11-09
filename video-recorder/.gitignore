@@ -32,6 +32,10 @@ recordings/
 # Logs
 *.log
 npm-debug.log*
+server.log
+
+# Runtime files
+.server.pid
 yarn-debug.log*
 yarn-error.log*
 
