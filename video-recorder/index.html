@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apsny Camera Recorder - Непрерывная запись</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📹 Apsny Camera Recorder</h1>
+            <p class="subtitle">Непрерывная запись с автоматическим обновлением токена</p>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="controls-section">
+                    <h2>Настройки камеры</h2>
+
+                    <div class="input-group">
+                        <label for="cameraId">ID Камеры:</label>
+                        <input
+                            type="text"
+                            id="cameraId"
+                            placeholder="например: sukhum_chegem"
+                            value="sukhum_chegem">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="streamUrl">Stream URL (автоматически):</label>
+                        <input
+                            type="text"
+                            id="streamUrl"
+                            placeholder="Будет получен автоматически"
+                            readonly>
+                        <button id="copyUrlBtn" class="btn btn-small" title="Копировать URL">📋</button>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="currentToken">Текущий токен:</label>
+                        <input
+                            type="text"
+                            id="currentToken"
+                            placeholder="Будет получен автоматически"
+                            readonly>
+                        <button id="copyTokenBtn" class="btn btn-small" title="Копировать токен">📋</button>
+                    </div>
+
+                    <div class="token-info">
+                        <div class="info-item">
+                            <span class="label">Время до обновления:</span>
+                            <span id="tokenExpiry" class="value">--:--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Обновлений токена:</span>
+                            <span id="tokenRefreshCount" class="value">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Статус соединения:</span>
+                            <span id="connectionStatus" class="value status-disconnected">Отключено</span>
+                        </div>
+                    </div>
+
+                    <button id="loadStreamBtn" class="btn btn-primary">
+                        🎥 Загрузить поток
+                    </button>
+                    <button id="manualRefreshBtn" class="btn btn-secondary" disabled>
+                        🔄 Обновить токен вручную
+                    </button>
+                </div>
+
+                <div class="recording-controls">
+                    <h2>Управление записью</h2>
+
+                    <div class="record-buttons">
+                        <button id="recordBtn" class="btn btn-record" disabled>
+                            <span class="btn-icon">⏺</span>
+                            <span>Начать запись</span>
+                        </button>
+                        <button id="stopBtn" class="btn btn-stop" disabled>
+                            <span class="btn-icon">⏹</span>
+                            <span>Остановить запись</span>
+                        </button>
+                    </div>
+
+                    <div class="recording-info">
+                        <div class="info-item">
+                            <span id="recordingStatus" class="status-indicator"></span>
+                            <span id="recordingTime" class="time-display">00:00:00</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Размер записи:</span>
+                            <span id="recordingSize" class="value">0 MB</span>
+                        </div>
+                    </div>
+
+                    <div class="auto-refresh-option">
+                        <label>
+                            <input type="checkbox" id="autoRefreshEnabled" checked>
+                            Автоматически обновлять токен
+                        </label>
+                    </div>
+
+                    <div class="quality-options">
+                        <label for="videoQuality">Качество записи:</label>
+                        <select id="videoQuality">
+                            <option value="high">Высокое (2.5 Mbps)</option>
+                            <option value="medium" selected>Среднее (1.5 Mbps)</option>
+                            <option value="low">Низкое (0.8 Mbps)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="video-section">
+                    <div class="video-container">
+                        <video id="videoPlayer" controls muted crossorigin="anonymous"></video>
+                        <div id="statusOverlay" class="status-overlay">
+                            <div class="status-message">Загрузите камеру для начала</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recordings-section">
+                    <div class="recordings-header">
+                        <h2>Записи</h2>
+                        <button id="clearAllBtn" class="btn btn-small btn-danger">Очистить все</button>
+                    </div>
+                    <div id="recordingsList" class="recordings-list">
+                        <p class="empty-state">Нет записей. Начните запись!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="logs-section">
+            <div class="logs-header">
+                <h3>Журнал событий</h3>
+                <button id="clearLogsBtn" class="btn btn-small">Очистить</button>
+            </div>
+            <div id="logsContainer" class="logs-container"></div>
+        </div>
+
+        <div class="info-section">
+            <h3>Как это работает:</h3>
+            <ol>
+                <li><strong>Автоматическое получение токена:</strong> Приложение подключается к API apsny.camera и получает stream URL с токеном</li>
+                <li><strong>Мониторинг токена:</strong> Отслеживает время жизни токена и автоматически обновляет его перед истечением</li>
+                <li><strong>Непрерывная запись:</strong> Запись продолжается даже при обновлении токена - новые сегменты автоматически добавляются</li>
+                <li><strong>Скачивание:</strong> После остановки записи можно скачать видео в формате WebM</li>
+            </ol>
+
+            <h3>Особенности:</h3>
+            <ul>
+                <li>✅ Автоматическое обновление токена без прерывания записи</li>
+                <li>✅ Поддержка HLS потоков (.m3u8)</li>
+                <li>✅ Мониторинг статуса соединения в реальном времени</li>
+                <li>✅ Логирование всех событий</li>
+                <li>✅ Множественные записи с одной камеры</li>
+                <li>✅ Настройка качества записи</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
